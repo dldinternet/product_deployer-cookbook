@@ -126,21 +126,22 @@ class Chef
 
             # Need to inspect the archive instead of unpacking the whole thing.
             basename = File.basename(artifacts['assembly'][:key])
-            s3f = s3_file "#{args[:download_path]}/#{basename}" do
-              path                  "#{args[:download_path]}/#{basename}"
-              remote_path           artifacts['assembly'][:key]
-              bucket                args[:s3_db]['bucket']
-              aws_access_key_id     args[:s3_db]['aws_access_key_id']
-              aws_secret_access_key args[:s3_db]['aws_secret_access_key']
-              owner                 args[:user]
-              group                 args[:group]
-              mode                  '644'
-              action                :nothing
-            end
-            s3f.run_action(:create)
+            # s3f = s3_file "#{args[:download_path]}/#{basename}" do
+            #   path                  "#{args[:download_path]}/#{basename}"
+            #   remote_path           artifacts['assembly'][:key]
+            #   bucket                args[:s3_db]['bucket']
+            #   aws_access_key_id     args[:s3_db]['aws_access_key_id']
+            #   aws_secret_access_key args[:s3_db]['aws_secret_access_key']
+            #   owner                 args[:user]
+            #   group                 args[:group]
+            #   mode                  '644'
+            #   action                :nothing
+            # end
+            # s3f.run_action(:create)
             # TODO: [2014-07-29 Christo] Right now we are relying on the resource to pass the correct tar flags ... We need to see if the assembly is a tar.gz or tar.bz2 and use -z/-j ...
-            hooks_exist = %x(tar tf /tmp/#{File.basename(artifacts['assembly'][:key])} #{args[:tar_flags].join(' ')} | egrep deployer/hooks 2>/dev/null)
+            hooks_exist = %x(tar tf /#{artifacts['assembly'][:file]} #{args[:tar_flags].join(' ')} | egrep deployer/hooks 2>/dev/null)
             if hooks_exist != ''
+              Chef::Log.info hooks_exist
               # Unpack any pre_hooks that the assembly has ...
               tmpd = inspection.dup
               tmpd[:product_root] = deployer_getPantry('/tmp/pre')
@@ -155,6 +156,8 @@ class Chef
                 hooks[:pre_hooks] = Dir.glob(File.join(targs[:path], 'deployer/hooks/pre','*')).sort
                 deployer_runHooks(:pre_hooks, hooks)
               end
+            else
+              Chef::Log.info "No hooks found"
             end
 
             if inspection[:preserve]

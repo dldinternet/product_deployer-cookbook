@@ -134,6 +134,18 @@ class Chef
           end
         end
 
+        if args[:release] == 'latest'
+          if varianth.has_key?('releases')
+            args[:release] = varianth['releases'][varianth['latest']['release']]
+          else
+            if builds[varianth['latest']['release']].has_key?('release')
+              args[:release] = builds[varianth['latest']['release']]['release']
+            end
+          end
+        end
+
+        args[:build_idx] = build_idx
+        args[:build_h] = builds[build_idx]
         args[:drawer] = builds[build_idx]['drawer']
         args[:name]   = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
 
@@ -144,7 +156,7 @@ class Chef
       def deployer_getArtifacts(args, inventory)
 
         container = inventory['container']
-        artfct_h  = container['artifacts']
+        artfct_a  = container['artifacts']
         variants  = container['variants']
         varianth  = variants[args[:variant]]
         unless variants.has_key?(args[:variant])
@@ -156,8 +168,13 @@ class Chef
 
         artifacts = {}
 
-        artfct_h.each { |artifact_id|
+        artfct_a.each { |artifact_id|
           artifact               = container[artifact_id].dup
+          if args.has_key?(:build_h)
+            if args[:build_h].has_key?(artifact_id)
+              artifact = args[:build_h][artifact_id].dup
+            end
+          end
           artifact_ext           = artifact['extension']
           artifact_fil           = "#{args[:name]}.#{artifact_ext}"
           artifact[:file]        = "#{args[:download_path]}/#{artifact_fil}"
