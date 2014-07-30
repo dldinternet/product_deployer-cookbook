@@ -5,7 +5,7 @@ LWRP to install product release builds from archives from Amazon's Simple Storag
 Usage
 -----
 product_release "latest drupal build" do
-    product      'cms',
+    product      'twc_cms',
     variant      "snapshot",
     version      "latest",
     branch       'develop',
@@ -13,7 +13,7 @@ product_release "latest drupal build" do
     user         'apache',
     group        'apache',
     path         node[drupal][dir],
-    meta_ini     node[drupal][deployer][version_ini],
+    version_ini  node[drupal][deployer][version_ini],
     preserves    node[drupal][deployer][preserves],
 end
 

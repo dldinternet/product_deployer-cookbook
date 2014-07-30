@@ -1,5 +1,8 @@
 # CHANGELOG for product_deployer
 
+## 0.4.5:
+* action  :download
+
 ## 0.4.4:
 * Encrypted indirect data bags with credentials for S3 etc.
 

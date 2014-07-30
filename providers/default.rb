@@ -12,13 +12,49 @@ require 'chef/dsl/data_query'
 
 class BreakError < ::StandardError; end
 
-include Chef::ProductDeployer::Mixin::Inventory
+include Chef::ProductDeployer::Inventory
 
-include Chef::ProductDeployer::Mixin::Installation
+include Chef::ProductDeployer::Installation
 
-include Chef::ProductDeployer::Mixin::Pantry
+include Chef::ProductDeployer::Pantry
 
-include Chef::ProductDeployer::Mixin::Deployer
+include Chef::ProductDeployer::Deployer
+
+action :download do
+	new_resource = @new_resource
+
+	args = {}
+
+	[
+		:product,
+		:variant,
+		:release,
+		:version,
+		:branch,
+		:build,
+		:user,
+		:group,
+		:path,
+		:meta_ini,
+		:preserves,
+		:overwrite,
+    :pre_hooks,
+    :post_hooks,
+    :secret_file,
+    :secret_url,
+    :secret,
+    :tar_flags,
+    :download_path,
+	].each{ |p|
+		v = new_resource.send(p.to_s)
+		args[p]=v unless v.nil?
+	}
+	Chef::Log.debug args.ai
+	#args = deployer_getArgs(args_p)
+	updated = downloadProduct(args)
+
+	new_resource.updated_by_last_action(updated)
+end
 
 action :deploy do
 	new_resource = @new_resource
@@ -44,13 +80,21 @@ action :deploy do
     :secret_url,
     :secret,
     :tar_flags,
+    :download_path,
 	].each{ |p|
 		v = new_resource.send(p.to_s)
 		args[p]=v unless v.nil?
 	}
 	Chef::Log.debug args.ai
 	#args = deployer_getArgs(args_p)
-	updated = deployPackage(args)
+	updated = deployProduct(args)
 
+  node.set['product_deployer'][args[:product]] = {
+    :release => args[:release],
+    :version => args[:version],
+    :branch => args[:branch],
+    :build => args[:build],
+    :variant => args[:variant],
+  }
 	new_resource.updated_by_last_action(updated)
 end

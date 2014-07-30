@@ -1,4 +1,4 @@
-actions :deploy
+actions :deploy, :retrieve
 attribute :product,     :kind_of => String, :name_attribute => true
 attribute :variant,     :kind_of => String,                   :default => "release"
 attribute :release,     :kind_of => String,                   :default => "latest"
@@ -8,6 +8,7 @@ attribute :build,       :kind_of => String,                   :default => 'lates
 attribute :user,        :kind_of => [String, NilClass],       :default => nil
 attribute :group,       :kind_of => [String, NilClass],       :default => nil
 attribute :path,        :kind_of => String
+attribute :download_path,:kind_of => String,                  :default => '/tmp'
 attribute :meta_ini,    :kind_of => [String, NilClass],       :default => nil
 attribute :preserves,   :kind_of => Array,                    :default => []
 attribute :overwrite,   :kind_of => [TrueClass, FalseClass],  :default => false
@@ -21,5 +22,5 @@ attribute :tar_flags,   :kind_of => Array,                    :default => %w(-z 
 #noinspection RubySuperCallWithoutSuperclassInspection
 def initialize(*args)
 	super
-	@action = :create
+	@action = :deploy
 end
