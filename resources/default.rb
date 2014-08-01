@@ -5,9 +5,9 @@ attribute :release,     :kind_of => String,                   :default => "lates
 attribute :version,     :kind_of => String,                   :default => "latest"
 attribute :branch,      :kind_of => String,                   :default => 'master'
 attribute :build,       :kind_of => String,                   :default => 'latest'
-attribute :user,        :kind_of => [String, NilClass],       :default => nil
-attribute :group,       :kind_of => [String, NilClass],       :default => nil
-attribute :path,        :kind_of => String
+attribute :user,        :kind_of => String,                   :default => 'root'
+attribute :group,       :kind_of => String,                   :default => 'root'
+attribute :path,        :kind_of => String,                   :default => nil
 attribute :download_path,:kind_of => String,                  :default => '/tmp'
 attribute :meta_ini,    :kind_of => [String, NilClass],       :default => nil
 attribute :preserves,   :kind_of => Array,                    :default => []

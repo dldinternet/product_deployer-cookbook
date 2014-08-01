@@ -1,5 +1,11 @@
 # CHANGELOG for product_deployer
 
+## 0.4.8:
+* Added the chef_gem we need in the default recipe
+
+## 0.4.7:
+* Simplify install and chown the unpacked files
+
 ## 0.4.5:
 * action  :download
 

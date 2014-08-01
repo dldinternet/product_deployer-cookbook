@@ -149,21 +149,17 @@ class Chef
         target_dir.run_action(:create)
 
         basename = File.basename(artifacts['assembly'][:key])
-        cwd      = Dir.chdir(inspection[:product_root])
+        cwd      = Dir.pwd
+        Dir.chdir(inspection[:product_root])
         raise "Cannot change directory to #{inspection[:product_root]} from #{Dir.pwd}" unless Dir.pwd == File.realpath(inspection[:product_root])
         Chef::Log.info Dir.glob('./*').ai
         raise "Directory not empty!?" if args[:overwrite] and (Dir.glob('./*').size > 2)
         output = %x"tar xf #{args[:download_path]}/#{basename} #{args[:tar_flags].join(' ')} 2>&1"
         raise output unless $? == 0
-        # eb_exec = execute "extract #{basename}" do
-        #   command
-        #   cwd       args[:product_root]
-        #   user      args[:user]
-        #   group     args[:group]
-        #   only_if   { updated }
-        #   action    :nothing # We will force run ourselves
-        # end
-        # eb_exec.run_action(:run)
+        Chef::Log.info args.ai
+        Chef::Log.debug "FileUtils.chown_R('#{args[:user]}', '#{args[:group]}', '#{inspection[:product_root]}')"
+        FileUtils.chown_R(args[:user], args[:group], inspection[:product_root])
+        Dir.chdir cwd
 
       end
 
