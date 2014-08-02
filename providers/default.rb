@@ -1,4 +1,3 @@
-require 'awesome_print'
 require 'chef/config'
 require 'uri'
 require 'chef/rest'
@@ -9,6 +8,35 @@ require 'chef/data_bag'
 require 'chef/data_bag_item'
 require 'chef/encrypted_data_bag_item'
 require 'chef/dsl/data_query'
+
+gems = %w(awesome_print colorize inifile)
+
+# =============================================================================
+# Check for gems we need
+require 'rubygems'
+require 'rubygems/gem_runner'
+require 'rubygems/exceptions'
+gems.each{ |g|
+  begin
+    gem g
+  rescue Gem::LoadError
+    # not installed
+    #puts %x(gem install #{g})
+    begin
+      puts "Need to install #{g}"
+      args = ['install', g, '--no-rdoc', '--no-ri']
+      Gem::GemRunner.new.run args
+    rescue Gem::SystemExitException => e
+      unless e.exit_code == 0
+        puts "ERROR: Failed to install #{g}. #{e.message}"
+        raise e
+      end
+    end
+  end
+}
+
+# Add-on gems
+gems.map{ |g| require g }
 
 class BreakError < ::StandardError; end
 
