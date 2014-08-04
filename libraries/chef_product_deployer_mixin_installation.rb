@@ -39,10 +39,11 @@ class Chef
             Chef::Log.info "#{vrbt_ini} exists"
             require 'inifile'
             ini = IniFile.load(vrbt_ini)
-            oldrelease = ini['global']['RELEASE']
+            Chef::Log.debug ini.ai
+            oldrelease = ini['global']['RELEASE'].to_s
             oldversion = ini['global']['VERSION']
             oldbranch  = ini['global']['BRANCH']
-            oldbuild   = ini['global']['BUILD']
+            oldbuild   = ini['global']['BUILD'].to_s
             oldtype    = ini['global']['TYPE']
             unless  (oldrelease == args[:release]) and
                 (oldversion == args[:version]) and

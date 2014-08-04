@@ -111,12 +111,13 @@ class Chef
 
           args[:download_only] = false
           inspection = deployer_inspectInstallation(args)
+          Chef::Log.info "Inspection: #{inspection.ai}"
 
           if inspection[:download]
             # Pull down all the artifacts
             deployer_downloadArtifacts(artifacts, args[:s3_db])
           else
-            Chef::Log.info "Not downloading. Inspection: #{inspection.ai}"
+            Chef::Log.info "Not downloading."
           end
 
           if inspection[:install]
