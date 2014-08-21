@@ -6,5 +6,9 @@
 #
 # All rights reserved - Do Not Redistribute
 #
-
-chef_gem 'awesome_print'
+require 'rubygems'
+begin
+  gem 'awesome_print'
+rescue
+  chef_gem 'awesome_print'
+end
