@@ -34,6 +34,7 @@ class Chef
         else
           secret    = nil
         end
+        Chef::Log::info "Load data bag with coordinates: #{data_bag_name}/#{data_bag_entry}"
         if secret
           s3_db = Chef::EncryptedDataBagItem.load(data_bag_name, data_bag_entry, secret)
         else
@@ -57,12 +58,12 @@ class Chef
             raise DeployError.new "Unexpected resonse (#{response.class.name}) to s3://#{s3_db['bucket']}/#{args[:product]}/INVENTORY.json"
         end
         args[:s3_db] = s3_db
-        Chef::Log.debug inventory.ai
+        Chef::Log.debug "Inventory: #{inventory.ai}"
 
         container = inventory['container']
         variants  = container['variants']
         varianth  = variants[args[:variant]]
-        Chef::Log.debug varianth.ai
+        Chef::Log.debug "varianth: #{varianth.ai}"
         unless variants.has_key?(args[:variant])
           raise DeployError.new "#{args[:variant]} variant has no builds in the inventory of #{args[:product]}"
         end
@@ -82,8 +83,8 @@ class Chef
           raise DeployError.new "Inventory of #{args[:product]}/#{args[:variant]} has outdated/ incorrect 'latest' set!"
         end
         builds    = varianth['builds']
-        Chef::Log.debug builds.ai
-        #branches  = varianth['branches']
+        Chef::Log.debug "builds from varianth: #{builds.ai}"
+        branches  = varianth['branches']
         versions  = varianth['versions']
 
         if args[:version] == 'latest'
@@ -104,7 +105,12 @@ class Chef
               if matches
                 matches[1]
               else
-                nil
+                matches = name.match(/^#{args[:product]}-#{args[:version]}-release-#{args[:release]}-#{args[:branch]}-#{args[:variant]}-build-(\d+)$/)
+                if matches
+                  matches[1]
+                else
+                  nil
+                end
               end
             end
           end
@@ -113,6 +119,27 @@ class Chef
         # For the latest build we conveniently have the index
         if args[:build] == 'latest'
           build_idx = varianth['latest']['build']
+          Chef::Log.debug "'latest' build without checking ... #{build_idx}"
+          # "build_name": "ChefRepo-1.0.11-release-1.0-pilot-PILOT-build-5",
+          version = (args[:version] == 'latest') ? '[0-9\.]+' : args[:version]
+          release = (args[:release] == 'latest') ? '[0-9\.]+' : args[:release]
+          branch  = (args[:branch]  == 'latest') ? (branches[-1] rescue 'develop') : args[:branch]
+          name    = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
+          matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
+          unless matches
+            matched_builds = []
+            # noinspection RubyHashKeysTypesInspection
+            Hash[builds.map.with_index.to_a].each{ |drawer,index|
+              name = drawer['build_name'] rescue drawer['build']
+              matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
+              if matches
+                matched_builds << index
+              end
+            }
+            Chef::Log.debug "Matched builds: #{args[:product]}-#{version}(#{args[:version]})-release-#{release}(#{args[:release]})-#{branch}(#{args[:branch]})-#{args[:variant]}-build-: #{matched_builds}"
+            build_idx = matched_builds[-1]
+            Chef::Log.debug "'latest' build with check ... #{build_idx}"
+          end
           args[:build] = _getBuildNumber(args,builds[build_idx])
           unless args[:build]
             raise DeployError.new "Cannot identify latest build number in #{builds[build_idx].ai}"

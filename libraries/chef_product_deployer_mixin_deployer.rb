@@ -117,7 +117,7 @@ class Chef
             # Pull down all the artifacts
             deployer_downloadArtifacts(artifacts, args[:s3_db])
           else
-            Chef::Log.info "Not downloading."
+            Chef::Log.info 'Not downloading.'
           end
 
           if inspection[:install]
@@ -158,7 +158,7 @@ class Chef
                 deployer_runHooks(:pre_hooks, hooks)
               end
             else
-              Chef::Log.info "No hooks found"
+              Chef::Log.info 'No hooks found'
             end
 
             if inspection[:preserve]
