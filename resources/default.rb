@@ -11,6 +11,7 @@ attribute :path,        :kind_of => String,                   :default => nil
 attribute :download_path,:kind_of => String,                  :default => '/tmp'
 attribute :meta_ini,    :kind_of => [String, NilClass],       :default => nil
 attribute :preserves,   :kind_of => Array,                    :default => []
+attribute :archive,     :kind_of => [TrueClass, FalseClass],  :default => true
 attribute :overwrite,   :kind_of => [TrueClass, FalseClass],  :default => false
 attribute :pre_hooks,   :kind_of => Array,                    :default => nil
 attribute :post_hooks,  :kind_of => Array,                    :default => nil

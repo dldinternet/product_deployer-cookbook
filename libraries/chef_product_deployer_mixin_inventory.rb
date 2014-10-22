@@ -47,6 +47,7 @@ class Chef
         end
 
         # Third, pull the inventory manifest for the product from the repo ...
+        Chef::Log::debug "Pull inventory from repo: #{s3_db['bucket']}/#{args[:product]}/INVENTORY.json"
         response       = S3FileLib.get_from_s3(s3_db['bucket'], "/#{args[:product]}/INVENTORY.json", s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil)
         case response.class.name
           when 'RestClient::RawResponse'
@@ -125,6 +126,7 @@ class Chef
           release = (args[:release] == 'latest') ? '[0-9\.]+' : args[:release]
           branch  = (args[:branch]  == 'latest') ? (branches[-1] rescue 'develop') : args[:branch]
           name    = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
+          Chef::Log.debug "'latest' build name ... #{name}"
           matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
           unless matches
             matched_builds = []
@@ -137,10 +139,16 @@ class Chef
               end
             }
             Chef::Log.debug "Matched builds: #{args[:product]}-#{version}(#{args[:version]})-release-#{release}(#{args[:release]})-#{branch}(#{args[:branch]})-#{args[:variant]}-build-: #{matched_builds}"
-            build_idx = matched_builds[-1]
+            build_idx = matched_builds[-1] if matched_builds.size > 0
             Chef::Log.debug "'latest' build with check ... #{build_idx}"
           end
-          args[:build] = _getBuildNumber(args,builds[build_idx])
+          name    = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
+          matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
+          args[:build] = if matches
+                           _getBuildNumber(args,builds[build_idx])
+                         else
+                           nil
+                         end
           unless args[:build]
             raise DeployError.new "Cannot identify latest build number in #{builds[build_idx].ai}"
           end

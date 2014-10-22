@@ -100,10 +100,11 @@ class Chef
         # move/remove old product root
         if ::Dir.exists?(product_root)
           if inspection[:oldversion]
-            Chef::Log.info "Check for ephemeral storage and move old versions there!"
             pantry = deployer_getPantry()
+            inspection[:pantry] = pantry
             preserve_base = "#{product_root}.#{args[:product]}-#{inspection[:oldversion]}-#{inspection[:oldbranch]}-build-#{inspection[:oldbuild]}"
             preserve_base = ::File.basename(preserve_base)
+            inspection[:preserve_root] =
             preserve_root = "#{pantry}/#{preserve_base}"
             if  (product_root != "#{pantry}/#{::File.basename(product_root)}") and
                 ::Dir.exists?("#{pantry}/#{::File.basename(product_root)}")
@@ -126,20 +127,6 @@ class Chef
 
       # ---------------------------------------------------------------------------------------------------------------------
       def deployer_newInstallation(args, artifacts, inspection)
-        # s3a = s3_archive artifacts['assembly'][:key] do
-        #   bucket                args[:s3_db]['bucket']
-        #   aws_access_key_id     args[:s3_db]['aws_access_key_id']
-        #   aws_secret_access_key args[:s3_db]['aws_secret_access_key']
-        #   user                  args[:user]
-        #   group                 args[:group]
-        #   mode                  '644'
-        #   tar_flags             args[:tar_flags]
-        #   target_dir            inspection[:product_root]
-        #   creates               inspection[:product_root]
-        #   overwrite             true
-        #   action                :nothing
-        # end
-        # s3a.run_action(:create)
         # We have updated something if the directory was recreated
         updated = (args[:overwrite] or (not ::File.exists?(inspection[:product_root])))
         target_dir = directory inspection[:product_root] do
@@ -151,17 +138,24 @@ class Chef
 
         basename = File.basename(artifacts['assembly'][:key])
         cwd      = Dir.pwd
-        Dir.chdir(inspection[:product_root])
-        raise "Cannot change directory to #{inspection[:product_root]} from #{Dir.pwd}" unless Dir.pwd == File.realpath(inspection[:product_root])
-        Chef::Log.info Dir.glob('./*').ai
-        raise "Directory not empty!?" if args[:overwrite] and (Dir.glob('./*').size > 2)
-        output = %x"tar xf #{args[:download_path]}/#{basename} #{args[:tar_flags].join(' ')} 2>&1"
-        raise output unless $? == 0
-        Chef::Log.info args.ai
-        Chef::Log.debug "FileUtils.chown_R('#{args[:user]}', '#{args[:group]}', '#{inspection[:product_root]}')"
-        FileUtils.chown_R(args[:user], args[:group], inspection[:product_root])
-        Dir.chdir cwd
-
+        begin
+          Dir.chdir(inspection[:product_root])
+          raise "Cannot change directory to #{inspection[:product_root]} from #{Dir.pwd}" unless Dir.pwd == File.realpath(inspection[:product_root])
+          Chef::Log.debug Dir.glob('./*').ai
+          raise "Directory not empty!?" if args[:overwrite] and (Dir.glob('./*').size > 2)
+          output = %x"tar xf #{args[:download_path]}/#{basename} #{args[:tar_flags].join(' ')} 2>&1"
+          raise output unless $? == 0
+          Chef::Log.debug args.ai
+          Chef::Log.debug "FileUtils.chown_R('#{args[:user]}', '#{args[:group]}', '#{inspection[:product_root]}')"
+          FileUtils.chown_R(args[:user], args[:group], inspection[:product_root])
+          if (not args[:archive]) and inspection.has_key?(:pantry)
+            FileUtils.rm_r(inspection[:pantry]) if ::Dir.exists?(inspection[:pantry])
+          end
+          Dir.chdir cwd
+        rescue Exception => e
+          Dir.chdir cwd
+          raise e
+        end
       end
 
       # ---------------------------------------------------------------------------------------------------------------------

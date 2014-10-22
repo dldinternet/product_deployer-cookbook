@@ -161,9 +161,11 @@ class Chef
               Chef::Log.info 'No hooks found'
             end
 
-            if inspection[:preserve]
-              preserved = deployer_preserveInstallation(args)
-            end
+            preserved = if inspection[:preserve]
+                          deployer_preserveInstallation(args)
+                        else
+                          {}
+                        end
 
             deployer_clearInstallation(args, inspection)
 
@@ -197,7 +199,7 @@ class Chef
           Chef::Log.error("#{e.class.name} #{e.message}")
           Chef::Log.error("#{e.backtrace.to_a.ai}")
         ensure
-          Chef::Log.error("Cannot deploy product #{args[:variant]}/#{args[:product]}-#{args[:version]}-r#{args[:release]}-#{args[:branch]}") unless succeeded
+          Chef::Log.error("Cannot deploy product #{args[:variant]}/#{args[:product]}-#{args[:version]}-release-#{args[:release]}-#{args[:branch]}") unless succeeded
         end
         false
       end

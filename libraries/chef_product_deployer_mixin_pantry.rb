@@ -12,6 +12,7 @@ class Chef
           FileUtils.mkpath(pantry)
           raise "Cannot create #{pantry}" unless ::Dir.exists?(pantry)
         end
+        Chef::Log.debug "Pantry: #{pantry}"
         pantry
       end
 
@@ -41,10 +42,14 @@ class Chef
         product_root = args[:path]
         preserved = {}
         unless args.has_key?(:preserves) and args[:preserves].is_a?(Array)
-          Chef::Log.warn 'List of things to preserve is empty!'
+          Chef::Log.warn 'List of things to preserve is invalid!'
           return nil
         end
-        Chef::Log.info 'Must preserve some things ...'
+        unless args[:preserves].size > 0
+          Chef::Log.warn 'List of things to preserve is empty!'
+          return preserved
+        end
+        Chef::Log.info "Must preserve some things ... #{args[:preserves]}"
         pantry = deployer_getPantry()
         args[:preserves].each{|path|
           file = "#{product_root}/#{path}"
@@ -55,6 +60,7 @@ class Chef
               unless ::File.directory?(copy)
                 FileUtils.mkpath(copy)
               end
+              Chef::Log.debug %(rsync -azv #{file}/ #{copy}/)
               %x(rsync -azv #{file}/ #{copy}/)
               unless ::File.directory?(copy)
                 raise DeployError.new "Unable to preserve #{file} to #{copy}"
@@ -88,7 +94,7 @@ class Chef
 
       # ---------------------------------------------------------------------------------------------------------------------
       def deployer_restorePreserved(args, preserved)
-        Chef::Log.info "Restore existing configs!"
+        Chef::Log.info 'Restore existing configs!'
         preserved.each{|path,jar|
           Chef::Log.debug "Restore: #{path}"
           if ::File.exists?(jar[:copy])
