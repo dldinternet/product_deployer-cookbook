@@ -142,8 +142,8 @@ class Chef
           Dir.chdir(inspection[:product_root])
           raise "Cannot change directory to #{inspection[:product_root]} from #{Dir.pwd}" unless Dir.pwd == File.realpath(inspection[:product_root])
           Chef::Log.debug Dir.glob('./*').ai
-          raise "Directory not empty!?" if args[:overwrite] and (Dir.glob('./*').size > 2)
-          output = %x"tar xf #{args[:download_path]}/#{basename} #{args[:tar_flags].join(' ')} 2>&1"
+          raise 'Directory not empty!?' if args[:overwrite] and (Dir.glob('./*').size > 2)
+          output = %x"tar #{args[:tar_comp]}xf #{args[:download_path]}/#{basename} #{args[:tar_flags].join(' ')} 2>&1"
           raise output unless $? == 0
           Chef::Log.debug args.ai
           Chef::Log.debug "FileUtils.chown_R('#{args[:user]}', '#{args[:group]}', '#{inspection[:product_root]}')"

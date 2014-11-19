@@ -140,7 +140,16 @@ class Chef
             # end
             # s3f.run_action(:create)
             # TODO: [2014-07-29 Christo] Right now we are relying on the resource to pass the correct tar flags ... We need to see if the assembly is a tar.gz or tar.bz2 and use -z/-j ...
-            hooks_exist = %x(tar tf /#{artifacts['assembly'][:file]} #{args[:tar_flags].join(' ')} | egrep deployer/hooks 2>/dev/null)
+            type = artifacts['assembly']['type'] rescue 'tar'
+            args[:tar_comp] = case type
+                              when /tarbzip2/
+                                'j'
+                              when /targzip/
+                                'z'
+                              else
+                                ''
+                              end
+            hooks_exist = %x(tar #{args[:tar_comp]}tf #{artifacts['assembly'][:file]} #{args[:tar_flags].join(' ')} | egrep deployer/hooks 2>/dev/null)
             if hooks_exist != ''
               Chef::Log.info hooks_exist
               # Unpack any pre_hooks that the assembly has ...

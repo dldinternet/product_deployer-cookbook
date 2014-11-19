@@ -115,7 +115,7 @@ action :deploy do
 		v = new_resource.send(p.to_s)
 		args[p]=v unless v.nil?
 	}
-	Chef::Log.debug args.ai
+	Chef::Log.debug "Product Deployer args: #{args.ai}"
 	#args = deployer_getArgs(args_p)
 	updated = deployProduct(args)
 
