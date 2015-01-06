@@ -47,7 +47,7 @@ class Chef
 
         # Third, pull the inventory manifest for the product from the repo ...
         Chef::Log::debug "Pull inventory from repo: #{s3_db['bucket']}/#{args[:product]}/INVENTORY.json"
-        response       = S3FileLib.get_from_s3(s3_db['bucket'], "/#{args[:product]}/INVENTORY.json", s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil)
+        response       = S3FileLib.get_from_s3(s3_db['bucket'], nil, "/#{args[:product]}/INVENTORY.json", s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'], nil)
         case response.class.name
           when 'RestClient::RawResponse'
             inventory      = JSON.parse(IO.read(response.file))
