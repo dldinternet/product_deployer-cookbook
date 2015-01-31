@@ -159,14 +159,20 @@ class Chef
             build_idx = matched_builds.sort_by{ |_,v| v }[-1] if matched_builds.size > 0
             Chef::Log.debug "'latest' build with check ... #{build_idx}"
           end
-          name    = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
-          matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
-          args[:build] = if matches
-                           _getBuildNumber(args,builds[build_idx],container['naming'])
-                         else
-                           nil
-                         end
+          args[:build] = _getBuildNumber(args,builds[build_idx],container['naming'])
           unless args[:build]
+            name    = builds[build_idx]['build_name'] rescue builds[build_idx]['build']
+            Chef::Log.debug "name: #{name.ai}"
+            matches = name.match(/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/)
+            Chef::Log.debug "matches: #{matches.ai} for '/^#{args[:product]}-#{version}-release-#{release}-#{branch}-#{args[:variant]}-build-(\d+)$/'"
+            args[:build] = if matches
+                             matches[1]
+                           else
+                             nil
+                           end
+          end
+          unless args[:build]
+            Chef::Log.info "Product deployer criteria: #{args.ai}"
             raise DeployError.new "Cannot identify latest build number in #{builds[build_idx].ai}"
           end
         else
@@ -257,13 +263,13 @@ class Chef
           download = true
           if ::File.exists?(artifact[:file])
             my_md5 = Digest::MD5.file(artifact[:file]).hexdigest
-            s3_md5 = S3FileLib::get_md5_from_s3(artifact[:bucket], artifact[:key], s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil)
+            s3_md5 = S3FileLib::get_md5_from_s3(artifact[:bucket], nil, artifact[:key], s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil)
             Chef::Log.debug "my_md5: [#{my_md5}]"
             Chef::Log.debug "s3_md5: [#{s3_md5}]"
             download = (s3_md5 != my_md5)
           end
           if download
-            IO.write(artifact[:file], S3FileLib.get_from_s3(artifact[:bucket], artifact[:key], s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil))
+            IO.write(artifact[:file], S3FileLib.get_from_s3(artifact[:bucket], nil, artifact[:key], s3_db['aws_access_key_id'], s3_db['aws_secret_access_key'],nil))
           end
         }
       end
