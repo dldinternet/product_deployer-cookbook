@@ -62,6 +62,7 @@ action :download do
 
 	[
 		:product,
+		:environment,
 		:variant,
 		:release,
 		:version,
@@ -81,6 +82,8 @@ action :download do
     :secret,
     :tar_flags,
     :download_path,
+    :data_bag_name,
+    :data_bag_item,
 	].each{ |p|
 		v = new_resource.send(p.to_s)
 		args[p]=v unless v.nil?
@@ -99,6 +102,7 @@ action :deploy do
 
 	[
 		:product,
+		:environment,
 		:variant,
 		:release,
 		:version,
@@ -118,6 +122,8 @@ action :deploy do
     :secret,
     :tar_flags,
     :download_path,
+		:data_bag_name,
+		:data_bag_item,
 	].each{ |p|
 		v = new_resource.send(p.to_s)
 		args[p]=v unless v.nil?

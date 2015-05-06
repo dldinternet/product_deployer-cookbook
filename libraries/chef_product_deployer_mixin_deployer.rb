@@ -105,9 +105,13 @@ class Chef
           succeeded = false
 
           inventory = deployer_getInventory(args)
+          # Chef::Log.info "product_deployer.deployer_getInventory.args: #{args.ai}"
+          node.default[:product_deployer][:attributes] = args
 
           # Now that we have access to the inventory we need to see which build we need and find all it's parts.
           artifacts = deployer_getArtifacts(args, inventory)
+          # Chef::Log.info "product_deployer.deployer_getArtifacts.artifacts: #{artifacts.ai}"
+          node.default[:product_deployer][:artifacts] = artifacts
 
           args[:download_only] = false
           inspection = deployer_inspectInstallation(args)
@@ -202,7 +206,7 @@ class Chef
           return inspection[:install]
         rescue Chef::Exceptions::InsufficientPermissions => e
           Chef::Log.error("#{e.message}: #{args[:path]}")
-        rescue RestClient::ResourceNotFound => e
+        rescue Chef::Exceptions::ResourceNotFound => e
           Chef::Log.error("#{e.message}: S3::#{e.response.args[:url]}")
         rescue => e
           Chef::Log.error("#{e.class.name} #{e.message}")

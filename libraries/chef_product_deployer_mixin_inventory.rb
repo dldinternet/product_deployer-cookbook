@@ -5,45 +5,12 @@ class Chef
     end
     module Inventory
       include Chef::ProductDeployer::Errors
+
       # ---------------------------------------------------------------------------------------------------------------------
       def deployer_getInventory(args)
-        def _expand(str)
-          eval("\"" + str + "\"")
-        end
-        # First get the releases databag to get the vendor and store so that we can get the "artifactory" repo coordinates
-        # Example: releases::twc_cms
-        rel_db         = data_bag_item('releases', args[:product])
-        vendor         = rel_db['repo']['vendor']
-        store          = rel_db['repo']['store']
+        Chef::Log.info "#{__method__} args: #{args.ai}"
 
-        # Second get the repo specific data bag - decrypt if we can/should
-        # Example aws::s3_ro_webDev
-        data_bag_name  = _expand rel_db[vendor][store]['databag_name']
-        data_bag_entry = _expand rel_db[vendor][store]['databag_entry']
-        Chef::Log::debug "PWD=#{Dir.pwd}"
-        if args[:secret_file]
-          Chef::Log::info "secret_file=#{args[:secret_file]}"
-          secret    = Chef::EncryptedDataBagItem.load_secret(args[:secret_file])
-        elsif args[:secret_url]
-          Chef::Log::info "secret_url=#{args[:secret_url]}"
-          secret    = Chef::EncryptedDataBagItem.load_secret(args[:secret_url])
-        elsif args[:secret]
-          Chef::Log::info 'secret given ...'
-          secret    = args[:secret]
-        else
-          secret    = nil
-        end
-        Chef::Log::info "Load data bag with coordinates: #{data_bag_name}/#{data_bag_entry}"
-        if secret
-          s3_db = Chef::EncryptedDataBagItem.load(data_bag_name, data_bag_entry, secret)
-        else
-          s3_db = data_bag_item(data_bag_name, data_bag_entry)
-        end
-        if s3_db.to_hash['bucket']['encrypted_data']
-          msg = "Unable to open the data bag (still encrypted): #{data_bag_name}/#{data_bag_entry}"
-          Chef::Log.fatal msg
-          raise DeployError.new(msg)
-        end
+        s3_db = Chef::ProductDeployer.getAWSCredentials(node,args)
 
         # Third, pull the inventory manifest for the product from the repo ...
         Chef::Log::debug "Pull inventory from repo: #{s3_db['bucket']}/#{args[:product]}/INVENTORY.json"
@@ -252,7 +219,36 @@ class Chef
           artifacts[artifact_id] = artifact
         }
 
-        Chef::Log.debug artifacts.ai
+        if args.has_key?(:build_h)
+          build_artifacts = nil
+          if args[:build_h].has_key?('artifacts')
+            build_artifacts = args[:build_h]['artifacts']
+          elsif args[:build_h].has_key?(:artifacts)
+            build_artifacts = args[:build_h][:artifacts]
+          end
+          if build_artifacts
+            map = {}
+            artifacts.each do |artifact_id,artifact|
+              file = File.basename(artifact[:file])
+              map[file] = artifact
+            end
+            build_artifacts.each do |file|
+              unless map[file]
+                ext = file.gsub(/\.(.+)$/, '\1')
+                artifact = {
+                    'extension' => ext,
+                    'type'      => ext,
+                    file:       "#{args[:download_path]}/#{file}",
+                    bucket:     args[:s3_db]['bucket'],
+                    key:        "/#{args[:product]}/#{args[:variant]}/#{args[:drawer]}/#{file}",
+                }
+                artifacts[file] = artifact
+              end
+            end
+          end
+        end
+
+        Chef::Log.debug "Product_deployer artifacts: #{artifacts.ai}"
         artifacts
       end
 

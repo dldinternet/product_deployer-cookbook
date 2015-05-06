@@ -46,7 +46,7 @@ class Chef
           return nil
         end
         unless args[:preserves].size > 0
-          Chef::Log.warn 'List of things to preserve is empty!'
+          Chef::Log.info 'List of things to preserve is empty!'
           return preserved
         end
         Chef::Log.info "Must preserve some things ... #{args[:preserves]}"
